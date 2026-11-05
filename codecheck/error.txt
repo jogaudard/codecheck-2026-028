@@ -1,0 +1,11 @@
+Error in `FUN()`:
+! subscript out of bounds
+Backtrace:
+    ▆
+ 1. └─semTools::measurementInvariance(...)
+ 2.   └─semTools:::printInvarianceResult(res, fit.measures, method)
+ 3.     └─base::sapply(fit.measures, function(x) sapply(FM, "[[", x))
+ 4.       └─base::lapply(X = X, FUN = FUN, ...)
+ 5.         └─semTools (local) FUN(X[[i]], ...)
+ 6.           └─base::sapply(FM, "[[", x)
+ 7.             └─base::lapply(X = X, FUN = FUN, ...)

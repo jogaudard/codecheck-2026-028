@@ -17,8 +17,8 @@ paper:
   reference: https://osf.io/ub8vs
 
 manifest:
-  - file: codecheck/placeholder_output.txt
-    comment: Placeholder output file - replace with actual reproduced outputs (figures, data files, tables, etc.)
+  - file: codecheck/error.txt
+    comment: Error output of unnamed-chunk-18
 
 codechecker:
   - name: Joseph Gaudard
@@ -27,7 +27,13 @@ codechecker:
 # Shown in the certificate's summary table and in the Zenodo description.
 # LaTeX math between $ signs is kept, so write \$ for a dollar sign.
 summary: >
-  FIXME: Short summary of the CODECHECK certificate
+  - R version not specified in README (nor in manuscript), doing codecheck on R v4.6.2
+  - I need to manually install some packages that I do not already have. Some are loaded further in the analysis Rmd, it would be more convenient to have a full list at the start of the file (or use renv).
+  - The code chunks are unnamed, it makes it hard to navigate.
+  - Function measurementInvariance from semTools is not available in latest version of semTools (0.5-10). I will try again with version 0.4-14 which should contain measurementInvariance.
+  - Using semTools v0.4-14, I still get an error with measurementInvariance.
+  - I see that the analysis file is named "_updated", using OSF file versioning of the same file would show better traceability.
+  - In the manuscript, it is written that the analysis were conducted in RStudio. RStudio is the editor, the language is R and it should have a version number.
 repository: https://github.com/jogaudard/codecheck-2026-028
 check_time: "2026-11-05 15:00:00"
 certificate: 2026-028
