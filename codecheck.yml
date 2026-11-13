@@ -28,6 +28,10 @@ codechecker:
 # LaTeX math between $ signs is kept, so write \$ for a dollar sign.
 summary: >
   - Did the codecheck in a container to use R 4.3.0
+  - emmeans 1.8.5 has unresolved dependencies and cannot be installed, proceding with v1.8.6
+  - had to install libMagick and libtcl in the container to make summarytool works
+  - GPArotation needed (l 51) and not declared in the readme
+  - l 125 as comments because container does not allow writing file
   - The code chunks are unnamed, it makes it hard to navigate.
   - I see that the analysis file is named "_updated", using OSF file versioning of the same file would show better traceability.
 repository: https://github.com/jogaudard/codecheck-2026-028
