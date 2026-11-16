@@ -10,7 +10,7 @@ paper:
       ORCID: 0000-0002-0805-7752
     - name: Apoorva Thakur
       ORCID: 0000-0001-8605-7048
-    - name: Sarah Rezae
+    - name: Sarah Rezaei
       ORCID: 0000-0002-2317-5730
     - name: James C. Kaufman
       ORCID: 0000-0003-0595-2820
@@ -28,16 +28,7 @@ codechecker:
 
 # Shown in the certificate's summary table and in the Zenodo description.
 # LaTeX math between $ signs is kept, so write \$ for a dollar sign.
-summary: >
-  - Did the codecheck in a container to use R 4.3.0
-  - emmeans 1.8.5 has unresolved dependencies and cannot be installed, proceeding with v1.8.6
-  - factoextra 1.0.7 depends on reshape2 1.4.4, which returns an error. Proceeding with reshape2 1.4.5 to be able to install factoextra 1.0.7
-  - had to install libMagick and libtcl in the container to make summarytool works
-  - performance 0.10.3 has unresolved dependencies, proceeding with v0.10.4
-  - GPArotation needed (l 51) and not declared in the readme
-  - I could reproduce Table 1 but not the other tables
-  - The code chunks are unnamed, it makes it hard to navigate.
-  - I see that the analysis file is named "_updated", using OSF file versioning of the same file would show better traceability.
+summary: 
 repository: https://github.com/jogaudard/codecheck-2026-028
 check_time: "2026-11-16 11:00:00"
 certificate: 2026-028
