@@ -17,8 +17,8 @@ paper:
   reference: https://osf.io/ub8vs
 
 manifest:
-  - file: codecheck/error.txt
-    comment: Error output of unnamed-chunk-18
+  - file: codecheck/CrCrime_updated_codecheck.html
+    comment: Analysis output
 
 codechecker:
   - name: Joseph Gaudard
@@ -28,10 +28,11 @@ codechecker:
 # LaTeX math between $ signs is kept, so write \$ for a dollar sign.
 summary: >
   - Did the codecheck in a container to use R 4.3.0
-  - emmeans 1.8.5 has unresolved dependencies and cannot be installed, proceding with v1.8.6
+  - emmeans 1.8.5 has unresolved dependencies and cannot be installed, proceeding with v1.8.6
+  - factoextra 1.0.7 depends on reshape2 1.4.4, which returns an error. Proceeding with reshape2 1.4.5 to be able to install factoextra 1.0.7
   - had to install libMagick and libtcl in the container to make summarytool works
+  - performance 0.10.3 has unresolved dependencies, proceeding with v0.10.4
   - GPArotation needed (l 51) and not declared in the readme
-  - l 125 as comments because container does not allow writing file
   - The code chunks are unnamed, it makes it hard to navigate.
   - I see that the analysis file is named "_updated", using OSF file versioning of the same file would show better traceability.
 repository: https://github.com/jogaudard/codecheck-2026-028
