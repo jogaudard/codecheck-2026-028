@@ -39,7 +39,7 @@ summary: >
   - The code chunks are unnamed, it makes it hard to navigate.
   - I see that the analysis file is named "_updated", using OSF file versioning of the same file would show better traceability.
 repository: https://github.com/jogaudard/codecheck-2026-028
-check_time: "2026-11-05 15:00:00"
+check_time: "2026-11-16 11:00:00"
 certificate: 2026-028
 # Use the version-specific Zenodo DOI, not the "concept DOI" (which always
 # points at the latest version) - see https://zenodo.org/help/versioning
