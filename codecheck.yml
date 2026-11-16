@@ -10,15 +10,17 @@ paper:
       ORCID: 0000-0002-0805-7752
     - name: Apoorva Thakur
       ORCID: 0000-0001-8605-7048
-    - name: Sarah Rezae
+    - name: Sarah Rezaei
       ORCID: 0000-0002-2317-5730
     - name: James C. Kaufman
       ORCID: 0000-0003-0595-2820
   reference: https://osf.io/ub8vs
 
 manifest:
-  - file: codecheck/placeholder_output.txt
-    comment: Placeholder output file - replace with actual reproduced outputs (figures, data files, tables, etc.)
+  - file: codecheck/CrCrime_updated_codecheck.html
+    comment: Analysis output
+  - file: codecheck/correl_crime.doc
+    comment: Table 1 in the manuscript
 
 codechecker:
   - name: Joseph Gaudard
@@ -26,10 +28,9 @@ codechecker:
 
 # Shown in the certificate's summary table and in the Zenodo description.
 # LaTeX math between $ signs is kept, so write \$ for a dollar sign.
-summary: >
-  FIXME: Short summary of the CODECHECK certificate
+summary: 
 repository: https://github.com/jogaudard/codecheck-2026-028
-check_time: "2026-11-05 15:00:00"
+check_time: "2026-11-16 11:00:00"
 certificate: 2026-028
 # Use the version-specific Zenodo DOI, not the "concept DOI" (which always
 # points at the latest version) - see https://zenodo.org/help/versioning

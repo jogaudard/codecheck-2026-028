@@ -147,22 +147,24 @@ codecheck::latex_summary_of_manifest(metadata, manifest_df, root)
 gitInfo <- codecheck::get_git_info(root)
 ```
 
-The GitHub repo ...
-`r gitInfo`
-Code was written in ...
-I went through the following steps ...
-One hard problem was ...
-I added the following files ... using tools/methods ...
+The GitHub repo `r gitInfo`.
 
-This took ... minutes to complete on {a large workstation, my laptop}.
+  - Did the codecheck in a container to use R 4.3.0
+  - emmeans 1.8.5 has unresolved dependencies and cannot be installed, proceeding with v1.8.6
+  - factoextra 1.0.7 depends on reshape2 1.4.4, which returns an error. Proceeding with reshape2 1.4.5 to be able to install factoextra 1.0.7
+  - had to install libMagick and libtcl in the container to make summarytool works
+  - performance 0.10.3 has unresolved dependencies, proceeding with v0.10.4
+  - GPArotation needed (l 51) and not declared in the readme
+  - I could reproduce Table 1 but not the other tables
+  - The code chunks are unnamed, it makes it hard to navigate.
+  - I see that the analysis file is named "_updated", using OSF file versioning of the same file would show better traceability.
+
 
 ## Recommendations
 
 I suggest to the authors to consider the following suggestions for their next publication or workflow:
 
-- ...
-
-(document here if any of the suggestions were taken up by the authors in the meantime - do not remove any, keep track of contributions via feedback)
+- Use 'renv' to provide a reproducible environment.
 
 \clearpage
 
@@ -190,8 +192,7 @@ codecheck::render_figure_comparisons(c("comparison/comparison-1.jpg", "compariso
 
 ## Acknowledgements
 
-I would like to thank ... for ... [promptly answering any
-queries/providing updates; assitance with X; ...].
+I would like to thank Richard J Telford for the help setting up docker.
 
 # Citing this document
 

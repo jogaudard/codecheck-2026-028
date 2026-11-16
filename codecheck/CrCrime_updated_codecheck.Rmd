@@ -1,0 +1,1710 @@
+---
+title: "Creativity Crime"
+author: "AP"
+date: "`r Sys.Date()`"
+output: html_document
+---
+#Loading Required Packages
+
+```{r}
+library(psych)
+library(Hmisc)
+library(tidyr)
+library(dplyr)
+library(summarytools)
+library(tidyverse)
+options(scipen = 999)
+```
+# Dataset
+```{r}
+crCrime <- read.csv("crCrime.csv")
+crCrime <- crCrime %>% filter(attention >= 1)
+crCrime <- crCrime %>% filter(gender < 3)
+crCrime <- crCrime %>% filter(age >= 18)
+crCrime <- crCrime %>% filter(engprof >= 5)
+psych::describe(crCrime)
+```
+# Demographic Stats
+```{r}
+summarytools::freq(crCrime$gender) # 1 = man, 2 = Woman 
+
+summarytools::freq(crCrime$country_origin) # 1 = Indian, 2 = American , 3 = Other (self described) 
+
+summarytools::freq(crCrime$education) # 1 = Did not complete high school, 2= High school diploma/GED, 3 = Associates degree, 4 = Bachelor's degree, 5= Master's degree, 6 = Doctorate degree (PhD, MD), 7 =  Prefer not to say	
+
+summarytools::freq(crCrime$employ) #1 = Student, 2=  Employed (full time or part time), 3 =  Self-employed, 4 =  Unemployed, 5 = Retired, 6 =  Prefer to self-describe.
+
+summarytools::freq(crCrime$marital) #Single (never married) = 1, In a domestic partnership = 2, Married = 3, Widowed/Divorced/Separated = 4, Prefer to self-describe = 5
+
+summarytools::freq(crCrime$religion) #Atheism = 1, Buddhism = 2 Christianity = 3, Hinduism= 4, Islam = 5, Jainism =6, Sikhism = 7, Judaism = 8, Zoroastrianism = 9, Prefer to self-describe = 10, Prefer not to disclose = 11
+
+summarytools::freq(crCrime$race) # African American/Black = 1, Asian/Asian American/Pacific Islander = 2, Caucasian/White = 3, Hispanic American/Latino = 4, Native American = 5, Mixed Race/Biracial = 6, Other (please specify) = 7, Prefer not to say = 8
+
+summarytools::freq(crCrime$ses) #1 = lowest on the ladder to 10 = being the highest on the ladder
+```
+
+# Reliabilities
+```{r}
+#Creativity Self Efficacy 
+cse <- crCrime %>% select(starts_with("cse"), -cse_total)
+psych::alpha(cse, check.keys = TRUE)
+psych::omega(cse)
+
+#Dark Personality Traits
+mach <- crCrime %>% select(starts_with("mach"), -mach_total)
+psych::alpha(mach)
+psych::omega(mach)
+
+narc <- crCrime %>% select(starts_with("nar"), -narc_total)
+psych::alpha(narc, check.keys=TRUE)
+psych::omega(narc)
+
+sadism <- crCrime %>% select(starts_with("sad"), -sadism_total)
+psych::alpha(sadism, check.keys=TRUE)
+psych::omega(sadism)
+
+psy <- crCrime %>% select(starts_with("psy"), -psych_total)
+psych::alpha(psy, check.keys=TRUE)
+psych::omega(psy)
+
+#Moral Foundations Questionnaire (MFQ)
+mfq <- crCrime %>% select(starts_with("MFQ"))
+harm_mfq <- mfq %>% select(ends_with("H"))
+psych::alpha(harm_mfq)
+psych::omega(harm_mfq)
+
+fair_mfq <- mfq %>% select(ends_with("F"))
+psych::alpha(fair_mfq)
+psych::omega(fair_mfq)
+
+loyal_mfq <- mfq %>% select(ends_with("L"))
+psych::alpha(loyal_mfq)
+psych::omega(loyal_mfq)
+
+auth_mfq <- mfq %>% select(ends_with("A"))
+psych::alpha(auth_mfq)
+psych::omega(auth_mfq)
+
+pur_mfq <- mfq %>% select(ends_with("P"))
+psych::alpha(pur_mfq)
+psych::omega(pur_mfq)
+
+ind_mfq <- mfq %>% select(ends_with("H") | ends_with("F"))
+psych::alpha(ind_mfq)
+psych::omega(ind_mfq)
+
+bind_mfq <- mfq %>% select(ends_with("L") | ends_with("A") | ends_with("P"))
+psych::alpha(bind_mfq)
+psych::omega(bind_mfq)
+```
+
+# Correlations
+```{r}
+crCrime <- filter(crCrime, gender < 3, education < 7, stringsAsFactors = TRUE)
+
+dv_means <- crCrime %>%
+  transmute(
+    mean_severity = rowMeans(select(., ends_with("_serious")), na.rm = TRUE),
+    mean_harm     = rowMeans(select(., ends_with("_harm")), na.rm = TRUE),
+    mean_sentence = rowMeans(select(., ends_with("_sentence")), na.rm = TRUE),
+    mean_rehab    = rowMeans(select(., ends_with("_rehab")), na.rm = TRUE)
+  )
+
+cor_crime <- bind_cols(crCrime %>% 
+  select(
+    age, gender, education, ses, 
+    psych_total, mach_total, narc_total, sadism_total,
+    mfq_care, mfq_fair, mfq_loyalty, mfq_authority, mfq_purity,
+    mfq_individualizing, mfq_bind,
+    cse_total, legal), dv_means
+)
+
+library(apaTables)
+apa.cor.table(
+  cor_crime,
+  filename = "correl_crime.doc",
+  table.number = 1,
+  show.conf.interval = TRUE,
+  show.sig.stars = TRUE,
+  landscape = TRUE
+)
+```
+
+# Assumption Checks
+```{r}
+shapiro.test(crCrime$cse_total)
+shapiro.test(crCrime$mach_total)
+shapiro.test(crCrime$narc_total)
+shapiro.test(crCrime$psych_total)
+shapiro.test(crCrime$sadism_total)
+shapiro.test(crCrime$mfq_individualizing)
+shapiro.test(crCrime$mfq_bind)
+shapiro.test(crCrime$legal)
+
+norm_df <- c(
+  "cse_total",
+  "mach_total",
+  "narc_total",
+  "psych_total",
+  "sadism_total",
+  "mfq_individualizing",
+  "mfq_bind",
+  "legal"
+)
+#QQ plots
+
+for (v in norm_df) {
+  print(
+    ggplot(crCrime, aes(sample = .data[[v]])) +
+      stat_qq() +
+      stat_qq_line() +
+      theme_minimal() +
+      labs(
+        title = paste("Q–Q Plot for", v),
+        x = "Theoretical Quantiles",
+        y = "Sample Quantiles"
+      )
+  )
+}
+
+#Histogram
+
+for (v in norm_df) {
+  print(
+    ggplot(crCrime, aes(x = .data[[v]])) +
+      geom_histogram(
+        aes(y = after_stat(density)),
+        bins = 30,
+        fill = "grey80",
+        color = "black"
+      ) +
+      geom_density(linewidth = 1) +
+      theme_minimal() +
+      labs(
+        title = paste("Histogram of", v),
+        x = v,
+        y = "Density"
+      )
+  )
+}
+```
+
+# long data conversion
+
+```{r}
+library(ordinal)
+
+crCrime <- crCrime %>%
+  mutate(
+    PID = factor(PID),
+    gender = factor(gender),
+  )
+
+
+df_long <- crCrime %>%
+  pivot_longer(
+    cols = matches("^(Cr|non_Cr)"),
+    names_to = c("creativity_dummy", "moral_valence", ".value"),
+    names_pattern = "^(non_)?Cr(.*)_(harm|serious|sentence|rehab)$"
+  ) %>%
+  mutate(
+    moral_valence = case_match(
+      tolower(moral_valence),
+      "amb"  ~ "ambiguous",
+      "self" ~ "self_interested",
+      "sin"  ~ "sinful",
+      "evil" ~ "evil"
+    )
+  ) %>%
+  mutate(
+    creativity = case_when(
+      moral_valence == "ambiguous"        & Amb_shown  == 1 ~ "Creative",
+      moral_valence == "ambiguous"        & Amb_shown  == 0 ~ "NonCreative",
+      moral_valence == "self_interested"  & Self_shown == 1 ~ "Creative",
+      moral_valence == "self_interested"  & Self_shown == 0 ~ "NonCreative",
+      moral_valence == "sinful"           & Sin_shown  == 1 ~ "Creative",
+      moral_valence == "sinful"           & Sin_shown  == 0 ~ "NonCreative",
+      moral_valence == "evil"             & Evil_shown == 1 ~ "Creative",
+      moral_valence == "evil"             & Evil_shown == 0 ~ "NonCreative"
+    ),
+    creativity = factor(creativity, levels = c("Creative", "NonCreative")),
+    moral_valence = factor(
+      moral_valence,
+      levels = c("evil", "sinful", "self_interested", "ambiguous")
+    ),
+    severity = serious
+  ) %>%
+  select(-serious, -creativity_dummy) %>%
+  relocate(PID, creativity, moral_valence)
+
+df_long %>%
+  filter(moral_valence == "evil") %>%
+  group_by(PID) %>%
+  summarise(
+    all_missing = all(is.na(harm) & is.na(severity) &
+                      is.na(sentence) & is.na(rehab))
+  ) %>%
+  filter(all_missing)
+
+df_long <- df_long %>%
+  filter(!is.na(harm) | !is.na(severity) | !is.na(sentence) | !is.na(rehab))
+
+df_long$sentence_ord <- factor(df_long$sentence,
+                              ordered = TRUE)
+
+table(df_long$moral_valence, df_long$creativity)
+
+psych::describe(df_long)
+
+```
+
+# Hypothesis testing 
+
+# H1: Non-creative crimes will consistently receive higher ratings for severity, harm, sentencing, and rehabilitation recommendations compared to creative crimes of the same valence, across all levels of moral valence.
+
+```{r}
+
+# AMBIGUOUS 
+
+df_amb <- df_long %>%filter(moral_valence == "ambiguous")
+
+aov_amb_severity <- aov(severity ~ creativity + Error(PID/creativity), data = df_amb)
+summary(aov_amb_severity)
+
+aov_amb_harm <- aov(harm ~ creativity + Error(PID/creativity), data = df_amb)
+summary(aov_amb_harm)
+
+aov_amb_sentence <- aov(sentence ~ creativity + Error(PID/creativity), data = df_amb)
+summary(aov_amb_sentence)
+
+aov_amb_rehab <- aov(rehab ~ creativity + Error(PID/creativity), data = df_amb)
+summary(aov_amb_rehab)
+
+# Extract p-values for Ambiguous condition
+
+extract_creativity_p <- function(aov_model) {
+  s <- summary(aov_model)
+  for (i in seq_along(s)) {
+    tab <- s[[i]][[1]]
+    if (!is.null(tab) && "creativity" %in% rownames(tab)) {
+      return(tab["creativity", "Pr(>F)"])
+    }
+  }
+  return(NA_real_)
+}
+p_amb <- c(
+  extract_creativity_p(aov_amb_severity),
+  extract_creativity_p(aov_amb_harm),
+  extract_creativity_p(aov_amb_sentence),
+  extract_creativity_p(aov_amb_rehab)
+)
+
+names(p_amb) <- c("severity", "harm", "sentence", "rehab")
+
+p_amb_holm <- p.adjust(p_amb, method = "holm")
+
+data.frame(
+  DV = names(p_amb),
+  p_raw = p_amb,
+  p_holm = p_amb_holm
+)
+
+df_amb %>%
+  group_by(creativity) %>%
+  summarise(
+    mean_severity = mean(severity, na.rm = TRUE),
+    mean_harm = mean(harm, na.rm = TRUE),
+    mean_sentence = mean(sentence, na.rm = TRUE),
+    mean_rehab = mean(rehab, na.rm = TRUE),
+    n = n()
+  )
+
+# SELF-INTERESTED
+
+df_self <- df_long %>% filter(moral_valence == "self_interested")
+
+aov_self_severity <- aov(severity ~ creativity + Error(PID/creativity), data = df_self)
+summary(aov_self_severity)
+
+aov_self_harm <- aov(harm ~ creativity + Error(PID/creativity), data = df_self)
+summary(aov_self_harm)
+
+aov_self_sentence <- aov(sentence ~ creativity + Error(PID/creativity), data = df_self)
+summary(aov_self_sentence)
+
+aov_self_rehab <- aov(rehab ~ creativity + Error(PID/creativity), data = df_self)
+summary(aov_self_rehab)
+
+p_self <- c(
+  extract_creativity_p(aov_self_severity),
+  extract_creativity_p(aov_self_harm),
+  extract_creativity_p(aov_self_sentence),
+  extract_creativity_p(aov_self_rehab)
+)
+
+names(p_self) <- c("severity", "harm", "sentence", "rehab")
+
+p_self_holm <- p.adjust(p_self, method = "holm")
+
+data.frame(
+  DV = names(p_self),
+  p_raw = p_self,
+  p_holm = p_self_holm
+)
+
+df_self %>%
+  group_by(creativity) %>%
+  summarise(
+    mean_severity = mean(severity, na.rm = TRUE),
+    mean_harm = mean(harm, na.rm = TRUE),
+    mean_sentence = mean(sentence, na.rm = TRUE),
+    mean_rehab = mean(rehab, na.rm = TRUE),
+    n = n()
+  )
+
+# SINFUL 
+
+df_sin <- df_long %>% filter(moral_valence == "sinful")
+
+aov_sin_severity <- aov(severity ~ creativity + Error(PID/creativity), data = df_sin)
+summary(aov_sin_severity)
+
+aov_sin_harm <- aov(harm ~ creativity + Error(PID/creativity), data = df_sin)
+summary(aov_sin_harm)
+
+aov_sin_sentence <- aov(sentence ~ creativity + Error(PID/creativity), data = df_sin)
+summary(aov_sin_sentence)
+
+aov_sin_rehab <- aov(rehab ~ creativity + Error(PID/creativity), data = df_sin)
+summary(aov_sin_rehab)
+
+p_sin <- c(
+  extract_creativity_p(aov_sin_severity),
+  extract_creativity_p(aov_sin_harm),
+  extract_creativity_p(aov_sin_sentence),
+  extract_creativity_p(aov_sin_rehab)
+)
+
+names(p_sin) <- c("severity", "harm", "sentence", "rehab")
+
+p_sin_holm <- p.adjust(p_sin, method = "holm")
+
+data.frame(
+  DV = names(p_sin),
+  p_raw = p_sin,
+  p_holm = p_sin_holm
+)
+
+df_sin %>%
+  group_by(creativity) %>%
+  summarise(
+    mean_severity = mean(severity, na.rm = TRUE),
+    mean_harm = mean(harm, na.rm = TRUE),
+    mean_sentence = mean(sentence, na.rm = TRUE),
+    mean_rehab = mean(rehab, na.rm = TRUE),
+    n = n()
+  )
+
+# EVIL 
+
+df_evil <- df_long %>% filter(moral_valence == "evil")
+
+aov_evil_severity <- aov(severity ~ creativity + Error(PID/creativity), data = df_evil)
+summary(aov_evil_severity)
+
+aov_evil_harm <- aov(harm ~ creativity + Error(PID/creativity), data = df_evil)
+summary(aov_evil_harm)
+
+aov_evil_sentence <- aov(sentence ~ creativity + Error(PID/creativity), data = df_evil)
+summary(aov_evil_sentence)
+
+aov_evil_rehab <- aov(rehab ~ creativity + Error(PID/creativity), data = df_evil)
+summary(aov_evil_rehab)
+
+p_evil <- c(
+  extract_creativity_p(aov_evil_severity),
+  extract_creativity_p(aov_evil_harm),
+  extract_creativity_p(aov_evil_sentence),
+  extract_creativity_p(aov_evil_rehab)
+)
+
+names(p_evil) <- c("severity", "harm", "sentence", "rehab")
+
+p_evil_holm <- p.adjust(p_evil, method = "holm")
+
+data.frame(
+  DV = names(p_evil),
+  p_raw = p_evil,
+  p_holm = p_evil_holm
+)
+
+df_evil %>%
+  group_by(creativity) %>%
+  summarise(
+    mean_severity = mean(severity, na.rm = TRUE),
+    mean_harm = mean(harm, na.rm = TRUE),
+    mean_sentence = mean(sentence, na.rm = TRUE),
+    mean_rehab = mean(rehab, na.rm = TRUE),
+    n = n()
+  )
+
+```
+
+# H2a: Crimes with “evil” moral valence will receive higher ratings for severity, harmfulness, sentencing, and rehabilitation recommendations compared to crimes with other moral valences, regardless of creativity. 
+# H2b: Crimes with “ambiguous” moral valence will receive lower ratings for severity, harmfulness, sentencing, and rehabilitation recommendations compared to crimes with other moral valences, regardless of creativity.
+```{r}
+# One-way repeated-measures MANOVA
+manova_valence <- manova(cbind(severity, harm, sentence, rehab) ~ moral_valence + Error(PID/moral_valence),
+                         data = df_long)
+
+summary(manova_valence)
+
+aov_sev <- aov(
+  severity ~ moral_valence + Error(PID/moral_valence),
+  data = df_long
+)
+summary(aov_sev)
+
+library(emmeans)
+
+emm_sev <- emmeans(aov_sev, ~ moral_valence)
+
+pairs(emm_sev, adjust = "holm")
+
+aov_harm <- aov(
+  harm ~ moral_valence + Error(PID/moral_valence),
+  data = df_long
+)
+summary(aov_harm)
+
+emm_harm <- emmeans(aov_harm, ~ moral_valence)
+
+pairs(emm_harm, adjust = "holm")
+
+aov_sent <- aov(
+  sentence ~ moral_valence + Error(PID/moral_valence),
+  data = df_long
+)
+summary(aov_sent)
+
+emm_sent <- emmeans(aov_sent, ~ moral_valence)
+
+pairs(emm_sent, adjust = "holm")
+
+aov_rehab <- aov(
+  rehab ~ moral_valence + Error(PID/moral_valence),
+  data = df_long
+)
+summary(aov_rehab)
+
+emm_rehab <- emmeans(aov_rehab, ~ moral_valence)
+
+pairs(emm_rehab, adjust = "holm")
+
+
+# Means for Moral Valence Groups
+
+df_long %>%
+  group_by(moral_valence) %>%
+  summarise(
+    mean_severity = mean(severity, na.rm = TRUE),
+    mean_harm = mean(harm, na.rm = TRUE),
+    mean_sentence = mean(sentence, na.rm = TRUE),
+    mean_rehab = mean(rehab, na.rm = TRUE),
+    n = n()
+  )
+
+# SD for Moral Valence Groups
+
+df_long %>%
+  group_by(moral_valence) %>%
+  summarise(
+    sd_severity = sd(severity, na.rm = TRUE),
+    sd_harm = sd(harm, na.rm = TRUE),
+    sd_sentence = sd(sentence, na.rm = TRUE),
+    sd_rehab = sd(rehab, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Means for Creativity x Moral Valence groups
+df_long %>%
+  group_by(moral_valence, creativity) %>%
+  summarise(
+    mean_severity = mean(severity, na.rm = TRUE),
+    mean_harm = mean(harm, na.rm = TRUE),
+    mean_sentence = mean(sentence, na.rm = TRUE),
+    mean_rehab = mean(rehab, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# SD for Creativity × Moral Valence groups
+
+df_long %>%
+  group_by(moral_valence, creativity) %>%
+  summarise(
+    sd_severity = sd(severity, na.rm = TRUE),
+    sd_harm = sd(harm, na.rm = TRUE),
+    sd_sentence = sd(sentence, na.rm = TRUE),
+    sd_rehab = sd(rehab, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+# H3: Ratings of crime severity will be predicted by sociodemographics, personality traits, moral foundations, creative self-efficacy, perceived legal knowledge, crime creativity (creative vs non-creative), moral valence (evil, sinful, self-interested, ambiguous), and the interaction between crime creativity and moral valence  
+
+# We will be using standardized coefficients for multiple regression analyses
+```{r}
+library(lme4)
+library(lmerTest)
+library(effectsize)
+library(performance)
+
+severity1<- lmer(severity ~ age + gender +education + (1 | PID), data = df_long)
+
+severity2<- lmer(severity ~ age + gender +education  + psych_total + mach_total + narc_total + sadism_total + mfq_individualizing + mfq_bind + (1 | PID), data = df_long)
+
+severity3<- lmer(severity ~ age + gender +education  + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + cse_total + legal + (1 | PID), data = df_long)
+
+severity4<- lmer(severity ~ age + gender +education  + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + cse_total + legal + creativity + moral_valence + creativity*moral_valence + (1 | PID), data = df_long)
+
+summary(severity1)
+summary(severity2)
+summary(severity3)
+summary(severity4)
+
+standardize_parameters(severity1, method = "refit")
+r2(severity1)
+
+standardize_parameters(severity2, method = "refit")
+r2(severity2)
+
+standardize_parameters(severity3, method = "refit")
+r2(severity3)
+
+standardize_parameters(severity4, method = "refit")
+r2(severity4)
+
+library(sjPlot)
+
+plot_model(severity4, 
+           type = "pred", 
+           terms = c("moral_valence", "creativity")) + 
+  geom_line() 
+```
+
+# H4: Ratings of crime harmfulness will be predicted by sociodemographics, personality traits, moral foundations, creative self-efficacy, perceived legal knowledge, crime creativity (creative vs non-creative), moral valence (evil, sinful, self-interested, ambiguous), and the interaction between crime creativity and moral valence  
+```{r}
+harm1<- lmer(harm ~ age + gender +education + ses + (1 | PID), data = df_long)
+
+harm2<- lmer(harm ~ age + gender +education + ses  + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + (1 | PID), data = df_long)
+
+harm3<- lmer(harm ~ age + gender +education + ses  + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + cse_total + legal + (1 | PID), data = df_long)
+
+harm4<- lmer(harm ~ age + gender +education + ses  + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + cse_total + legal + creativity + moral_valence + creativity*moral_valence + (1 | PID), data = df_long)
+
+summary(harm1)
+summary(harm2)
+summary(harm3)
+summary(harm4)
+
+standardize_parameters(harm1, method = "refit")
+r2(harm1)
+
+standardize_parameters(harm2, method = "refit")
+r2(harm2)
+
+standardize_parameters(harm3, method = "refit")
+r2(harm3)
+VarCorr(harm3)
+
+standardize_parameters(harm4, method = "refit")
+r2(harm4)
+
+
+plot_model(harm4, 
+           type = "pred", 
+           terms = c("moral_valence", "creativity")) + 
+  geom_line() 
+
+```
+
+# H5: Sentencing recommendations will be predicted by sociodemographics, personality traits, moral foundations, creative self-efficacy, perceived legal knowledge, crime creativity (creative vs non-creative), moral valence (evil, sinful, self-interested, ambiguous), and the interaction between crime creativity and moral valence  
+```{r}
+sentence1<- lmer(sentence ~ gender + (1 | PID), data = df_long)
+
+sentence2<- lmer(sentence ~ gender + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + (1 | PID), data = df_long)
+
+sentence3<- lmer(sentence ~ gender + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + cse_total + legal + (1 | PID), data = df_long)
+
+sentence4<- lmer(sentence ~ gender + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + cse_total + legal + creativity + moral_valence + creativity*moral_valence + (1 | PID), data = df_long)
+
+summary(sentence1)
+summary(sentence2)
+summary(sentence3)
+summary(sentence4)
+
+standardize_parameters(sentence1, method = "refit")
+r2(sentence1)
+
+standardize_parameters(sentence2, method = "refit")
+r2(sentence2)
+
+standardize_parameters(sentence3, method = "refit")
+r2(sentence3)
+
+standardize_parameters(sentence4, method = "refit")
+r2(sentence4)
+
+
+plot_model(sentence4, 
+           type = "pred", 
+           terms = c("moral_valence", "creativity")) + 
+  geom_line() 
+
+# ordinal models for robustness check
+clmm_model1 <- clmm(sentence_ord ~ gender + (1 | PID), data = df_long)
+
+clmm_model2 <- clmm(sentence_ord ~ gender + psych_total + mach_total + narc_total + sadism_total + mfq_individualizing + mfq_bind + (1 | PID), data = df_long)
+
+clmm_model3 <- clmm(sentence_ord ~ gender + psych_total + mach_total + narc_total + sadism_total + mfq_individualizing + mfq_bind + cse_total + legal + (1 | PID), data = df_long)
+
+clmm_model4 <- clmm(sentence_ord ~ gender + psych_total + mach_total + narc_total + sadism_total + mfq_individualizing + mfq_bind + cse_total + legal + creativity * moral_valence + (1 | PID), data = df_long)
+
+summary(clmm_model1)
+summary(clmm_model2)
+summary(clmm_model3)
+summary(clmm_model4)
+```
+
+# H6: Rehabilitation recommendations will be predicted by sociodemographics, personality traits, moral foundations, creative self-efficacy, perceived legal knowledge, crime creativity (creative vs non-creative), moral valence (evil, sinful, self-interested, ambiguous), and the interaction between crime creativity and moral valence  
+```{r}
+rehab1<- lmer(rehab ~ age +education + ses + (1 | PID), data = df_long)
+
+rehab2<- lmer(rehab ~ age +education + ses + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + (1 | PID), data = df_long)
+
+rehab3<- lmer(rehab ~ age + education + ses + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + cse_total + legal + (1 | PID), data = df_long)
+
+rehab4<- lmer(rehab ~ age + education + ses + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + cse_total + legal + creativity + moral_valence + creativity*moral_valence + (1 | PID), data = df_long)
+
+summary(rehab1)
+summary(rehab2)
+summary(rehab3)
+summary(rehab4)
+
+standardize_parameters(rehab1, method = "refit")
+r2(rehab1)
+
+standardize_parameters(rehab2, method = "refit")
+r2(rehab2)
+
+standardize_parameters(rehab3, method = "refit")
+r2(rehab3)
+
+standardize_parameters(rehab4, method = "refit")
+r2(rehab4)
+
+
+plot_model(rehab4, 
+           type = "pred", 
+           terms = c("moral_valence", "creativity")) + 
+  geom_line() 
+
+```
+
+# RQ1: How does an individual's understanding of the legal system and moral judgments influence their sentencing decisions?
+
+```{r}
+
+dec <- lmer(sentence ~ legal + moral_valence + legal*moral_valence + (1 | PID), data = df_long)
+summary(dec)
+
+standardize_parameters(dec, method = "refit")
+r2(dec)
+
+plot_model(dec, 
+           type = "pred", 
+           terms = c("moral_valence", "legal")) + 
+  geom_line() 
+```
+
+#RQ2: Will there be a cross-cultural difference in terms of severity, harmfulness and sentencing given to the different types of crime?
+
+```{r}
+cult_diff<- filter(df_long, country_origin < 3, stringsAsFactors = TRUE)
+
+  
+# Severity
+sev_nation <- lmer(severity ~  age + gender + education + ses + country_origin + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + cse_total + legal + creativity + moral_valence + creativity*moral_valence + (1 | PID), data = cult_diff)
+summary(sev_nation)
+
+standardize_parameters(sev_nation, method = "refit")
+r2(sev_nation)
+
+
+plot_model(sev_nation, 
+           type = "pred", 
+           terms = c("moral_valence", "creativity")) + 
+  geom_line() 
+
+# Harmfulness
+harm_nation <- lmer(harm ~ age + gender + education + ses +  country_origin + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + cse_total + legal + creativity + moral_valence + creativity*moral_valence + (1 | PID), data = cult_diff)
+summary(harm_nation)
+
+standardize_parameters(harm_nation, method = "refit")
+r2(harm_nation)
+
+plot_model(harm_nation, 
+           type = "pred", 
+           terms = c("moral_valence", "creativity")) + 
+  geom_line() 
+
+# Sentencing
+sentence_nation <- lmer(sentence ~ age + gender + education + ses + country_origin + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + cse_total + legal + creativity + moral_valence + creativity*moral_valence + (1 | PID), data = cult_diff)
+summary(sentence_nation)
+
+standardize_parameters(sentence_nation, method = "refit")
+r2(sentence_nation)
+
+
+plot_model(sentence_nation, 
+           type = "pred", 
+           terms = c("moral_valence", "creativity")) + 
+  geom_line() 
+
+# Rehabilitation
+rehab_nation <- lmer(rehab ~ age + gender + education + ses +  country_origin + psych_total + mach_total + narc_total + sadism_total  + mfq_individualizing + mfq_bind + cse_total + legal + creativity + moral_valence + creativity*moral_valence + (1 | PID), data = cult_diff)
+summary(rehab_nation)
+
+standardize_parameters(rehab_nation, method = "refit")
+r2(rehab_nation)
+
+plot_model(rehab_nation, 
+           type = "pred", 
+           terms = c("moral_valence", "creativity")) + 
+  geom_line() 
+```
+
+# RQ3: What are the distinct profiles of participants who consider crimes as more harmful, severe, deserving of higher sentencing, and lower rehabilitation recommendations?
+
+```{r}
+
+
+library(tidyverse)
+library(cluster)
+library(hopkins)
+library(factoextra)
+library(NbClust)
+library(fpc)
+
+cluster_vars <- crCrime %>%
+  transmute(
+    mean_severity = rowMeans(select(., ends_with("serious")), na.rm = TRUE),
+    mean_harm     = rowMeans(select(., ends_with("harm")), na.rm = TRUE),
+    mean_sentence = rowMeans(select(., ends_with("sentence")), na.rm = TRUE),
+    mean_rehab    = rowMeans(select(., ends_with("rehab")), na.rm = TRUE)
+  )
+
+
+scaled_cluster <- scale(cluster_vars)
+
+#checking clusterability
+
+set.seed(123)
+
+hopkins_result <- hopkins(scaled_cluster)
+hopkins_result
+
+nb_result <- NbClust(
+  scaled_cluster,
+  distance = "euclidean",
+  min.nc = 2,
+  max.nc = 6,
+  method = "kmeans"
+)
+
+# K-means clustering (k = 2)
+
+set.seed(123)
+
+km <- kmeans(
+  scaled_cluster,
+  centers = 2,
+  nstart = 50
+)
+
+cluster_vars$Cluster <- factor(km$cluster)
+
+# Attach cluster membership to participant data
+cluster_profiles <- crCrime %>%
+  mutate(Cluster = factor(km$cluster))
+
+#  Cluster evaluation
+
+# Cluster sizes
+table(cluster_vars$Cluster)
+
+# Cluster centers
+km$centers
+
+# PCA visualization
+pca <- prcomp(scaled_cluster)
+
+pca_df <- data.frame(
+  PC1 = pca$x[,1],
+  PC2 = pca$x[,2],
+  Cluster = cluster_vars$Cluster
+)
+
+ggplot(
+  pca_df,
+  aes(PC1, PC2, color = Cluster)
+) +
+  geom_point(size = 2) +
+  theme_minimal() +
+  labs(
+    title = "Crime Judgment Clusters (k = 2)"
+  )
+
+# Silhouette plot
+sil <- silhouette(
+  km$cluster,
+  dist(scaled_cluster)
+)
+
+fviz_silhouette(sil)
+
+# Cluster visualization
+fviz_cluster(
+  km,
+  data = scaled_cluster,
+  ellipse.type = "norm",
+  geom = "point"
+)
+
+# Interpret crime judgment clusters
+
+cluster_summary <- cluster_vars %>%
+  group_by(Cluster) %>%
+  summarise(
+    Severity = mean(mean_severity),
+    Harm = mean(mean_harm),
+    Sentence = mean(mean_sentence),
+    Rehab = mean(mean_rehab),
+    n = n(),
+    .groups = "drop"
+  )
+
+cluster_summary
+
+# Profile plot
+cluster_plot <- cluster_vars %>%
+  pivot_longer(
+    cols = mean_severity:mean_rehab,
+    names_to = "Outcome",
+    values_to = "Value"
+  ) %>%
+  group_by(Cluster, Outcome) %>%
+  summarise(
+    Value = mean(Value),
+    .groups = "drop"
+  )
+
+ggplot(
+  cluster_plot,
+  aes(
+    x = Outcome,
+    y = Value,
+    group = Cluster,
+    color = Cluster
+  )
+) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  theme_minimal() +
+  labs(
+    title = "Crime Judgment Profiles",
+    x = "Outcome Measure",
+    y = "Mean Rating"
+  )
+
+
+library(fpc)
+
+# Dunn Index
+
+stats_k2 <- cluster.stats(
+  d = dist(scaled_cluster),
+  clustering = km$cluster
+)
+
+stats_k2$dunn
+
+
+# Statistical validation of cluster differences
+
+manova_cluster <- manova(
+  cbind(
+    mean_severity,
+    mean_harm,
+    mean_sentence,
+    mean_rehab
+  ) ~ Cluster,
+  data = cluster_vars
+)
+
+summary(manova_cluster)
+summary.aov(manova_cluster)
+
+# Psychological profiling of clusters
+
+profile_summary <- cluster_profiles %>%
+  group_by(Cluster) %>%
+  summarise(
+    psych = mean(psych_total, na.rm = TRUE),
+    mach = mean(mach_total, na.rm = TRUE),
+    narc = mean(narc_total, na.rm = TRUE),
+    sadism = mean(sadism_total, na.rm = TRUE),
+
+    individualizing = mean(mfq_individualizing, na.rm = TRUE),
+    binding = mean(mfq_bind, na.rm = TRUE),
+
+    legal = mean(legal, na.rm = TRUE),
+    cse = mean(cse_total, na.rm = TRUE),
+
+    .groups = "drop"
+  )
+
+profile_summary
+
+# MANOVA
+
+manova_profiles <- manova(
+  cbind(
+    psych_total,
+    mach_total,
+    narc_total,
+    sadism_total,
+    mfq_individualizing,
+    mfq_bind,
+    legal,
+    cse_total
+  ) ~ Cluster,
+  data = cluster_profiles
+)
+
+summary(manova_profiles)
+summary.aov(manova_profiles)
+
+# t-tests
+
+t.test(psych_total ~ Cluster, data = cluster_profiles)
+t.test(mach_total ~ Cluster, data = cluster_profiles)
+t.test(narc_total ~ Cluster, data = cluster_profiles)
+t.test(sadism_total ~ Cluster, data = cluster_profiles)
+t.test(mfq_bind ~ Cluster, data = cluster_profiles)
+t.test(mfq_individualizing ~ Cluster, data = cluster_profiles)
+t.test(legal ~ Cluster, data = cluster_profiles)
+t.test(cse_total ~ Cluster, data = cluster_profiles)
+
+# Holm correction
+
+pvals <- c(
+  t.test(psych_total ~ Cluster, data = cluster_profiles)$p.value,
+  t.test(mach_total ~ Cluster, data = cluster_profiles)$p.value,
+  t.test(narc_total ~ Cluster, data = cluster_profiles)$p.value,
+  t.test(sadism_total ~ Cluster, data = cluster_profiles)$p.value,
+  t.test(mfq_individualizing ~ Cluster, data = cluster_profiles)$p.value,
+  t.test(mfq_bind ~ Cluster, data = cluster_profiles)$p.value,
+  t.test(legal ~ Cluster, data = cluster_profiles)$p.value,
+  t.test(cse_total ~ Cluster, data = cluster_profiles)$p.value
+)
+
+p.adjust(pvals, method = "BH")
+
+#  Psychological profile plot
+
+profile_scaled <- cluster_profiles %>%
+  select(
+    Cluster,
+    psych_total,
+    mach_total,
+    narc_total,
+    sadism_total,
+    mfq_individualizing,
+    mfq_bind,
+    legal,
+    cse_total
+  ) %>%
+  mutate(across(-Cluster, scale))
+
+profile_long <- profile_scaled %>%
+  pivot_longer(
+    cols = -Cluster,
+    names_to = "Variable",
+    values_to = "Score"
+  )
+
+ggplot(
+  profile_long,
+  aes(
+    x = Variable,
+    y = Score,
+    group = Cluster,
+    color = Cluster
+  )
+) +
+  stat_summary(
+    fun = mean,
+    geom = "line",
+    linewidth = 1.2
+  ) +
+  stat_summary(
+    fun = mean,
+    geom = "point",
+    size = 3
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Psychological Profiles of Crime Judgment Clusters",
+    x = "Psychological Variables",
+    y = "Standardized Mean (z-score)"
+  ) +
+  theme(
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1
+    )
+  )
+
+# Psychological heatmap
+
+heatmap_data <- profile_scaled %>%
+  group_by(Cluster) %>%
+  summarise(
+    across(everything(), mean, na.rm = TRUE)
+  )
+
+heatmap_long <- heatmap_data %>%
+  pivot_longer(
+    cols = -Cluster,
+    names_to = "Variable",
+    values_to = "Score"
+  )
+
+ggplot(
+  heatmap_long,
+  aes(
+    x = Variable,
+    y = Cluster,
+    fill = Score
+  )
+) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(
+    low = "blue",
+    mid = "white",
+    high = "red",
+    midpoint = 0
+  ) +
+  scale_x_discrete(
+    labels = c(
+      cse_total = "Creative Self-Efficacy",
+      legal = "Legal Knowledge",
+      mach_total = "Machiavellianism",
+      mfq_bind = "Binding Foundations",
+      mfq_individualizing = "Individualizing Foundations",
+      narc_total = "Narcissism",
+      psych_total = "Psychopathy",
+      sadism_total = "Sadism"
+    )
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Cluster Heatmap for the Psychological Traits Associated with Crime Judgments",
+    x = "",
+    y = "Cluster"
+  ) +
+  theme(
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1
+    )
+  )
+```
+
+# clustering for moral valance and creative non-creative
+```{r}
+#Clusters per Moral Valence
+
+cluster_valence <- df_long %>%
+  group_by(PID, moral_valence) %>%
+  summarise(
+    severity = mean(severity, na.rm = TRUE),
+    harm = mean(harm, na.rm = TRUE),
+    sentence = mean(sentence, na.rm = TRUE),
+    rehab = mean(rehab, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_wider(
+    names_from = moral_valence,
+    values_from = c(severity, harm, sentence, rehab)
+  )
+
+cluster_matrix <- cluster_valence %>%
+  select(-PID)
+
+scaled_cluster_valence <- scale(cluster_matrix)
+
+hopkins(scaled_cluster_valence)
+
+#creative categories
+
+cluster_creativity <- df_long %>%
+  group_by(PID, creativity) %>%
+  summarise(
+    severity = mean(severity, na.rm = TRUE),
+    harm = mean(harm, na.rm = TRUE),
+    sentence = mean(sentence, na.rm = TRUE),
+    rehab = mean(rehab, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+creative_data <- cluster_creativity %>%
+  filter(creativity == "Creative") %>%
+  select(-creativity, -PID)
+
+noncreative_data <- cluster_creativity %>%
+  filter(creativity == "NonCreative") %>%
+  select(-creativity, -PID)
+
+scaled_creative <- scale(creative_data)
+scaled_noncreative <- scale(noncreative_data)
+
+# Hopkins for creative data
+set.seed(123)
+hopkins_creative <- hopkins(scaled_creative)
+hopkins_creative
+
+# Hopkins for non-creative data
+set.seed(123)
+hopkins_noncreative <- hopkins(scaled_noncreative)
+hopkins_noncreative
+
+set.seed(123)
+km_creative <- kmeans(scaled_creative, centers = 2, nstart = 50)
+
+set.seed(123)
+km_noncreative <- kmeans(scaled_noncreative, centers = 2, nstart = 50)
+
+creative_data$Cluster <- factor(km_creative$cluster)
+noncreative_data$Cluster <- factor(km_noncreative$cluster)
+
+aggregate(creative_data, by = list(Cluster = creative_data$Cluster), mean)
+aggregate(noncreative_data, by = list(Cluster = noncreative_data$Cluster), mean)
+
+nb <- NbClust(
+  scaled_creative,
+  distance = "euclidean",
+  min.nc = 2,
+  max.nc = 6,
+  method = "kmeans"
+)
+
+
+nb <- NbClust(
+  scaled_noncreative,
+  distance = "euclidean",
+  min.nc = 2,
+  max.nc = 6,
+  method = "kmeans"
+)
+
+set.seed(123)
+km_creative <- kmeans(scaled_creative, centers = 2, nstart = 50)
+
+set.seed(123)
+km_noncreative <- kmeans(scaled_noncreative, centers = 2, nstart = 50)
+
+creative_data$Cluster <- factor(km_creative$cluster)
+noncreative_data$Cluster <- factor(km_noncreative$cluster)
+
+aggregate(creative_data, by = list(Cluster = creative_data$Cluster), mean)
+aggregate(noncreative_data, by = list(Cluster = noncreative_data$Cluster), mean)
+
+fviz_cluster(
+  km_creative,
+  data = scaled_creative,
+  ellipse.type = "norm",
+  geom = "point"
+) + ggtitle("Clusters (Creative Crimes)")
+
+creative_profile <- creative_data %>%
+  pivot_longer(
+    cols = severity:rehab,
+    names_to = "Outcome",
+    values_to = "Value"
+  ) %>%
+  group_by(Cluster, Outcome) %>%
+  summarise(Value = mean(Value), .groups = "drop")
+
+ggplot(creative_profile,
+       aes(x = Outcome, y = Value, group = Cluster, color = Cluster)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  theme_minimal() +
+  labs(
+    title = "Cluster Profiles (Creative Crimes)",
+    x = "Outcome Measure",
+    y = "Mean Rating"
+  )
+
+sil_creative <- silhouette(km_creative$cluster, dist(scaled_creative))
+
+fviz_silhouette(sil_creative)
+
+fviz_cluster(
+  km_noncreative,
+  data = scaled_noncreative,
+  ellipse.type = "norm",
+  geom = "point"
+) + ggtitle("Clusters (Non-Creative Crimes)")
+
+noncreative_profile <- noncreative_data %>%
+  pivot_longer(
+    cols = severity:rehab,
+    names_to = "Outcome",
+    values_to = "Value"
+  ) %>%
+  group_by(Cluster, Outcome) %>%
+  summarise(Value = mean(Value), .groups = "drop")
+
+ggplot(noncreative_profile,
+       aes(x = Outcome, y = Value, group = Cluster, color = Cluster)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  theme_minimal() +
+  labs(
+    title = "Cluster Profiles (Non-Creative Crimes)",
+    x = "Outcome Measure",
+    y = "Mean Rating"
+  )
+
+sil_noncreative <- silhouette(km_noncreative$cluster, dist(scaled_noncreative))
+
+fviz_silhouette(sil_noncreative)
+
+
+#  Dunn Index
+
+creative_stats <- cluster.stats(
+  d = dist(scaled_creative),
+  clustering = km_creative$cluster
+)
+
+creative_stats$dunn
+
+noncreative_stats <- cluster.stats(
+  d = dist(scaled_noncreative),
+  clustering = km_noncreative$cluster
+)
+
+noncreative_stats$dunn
+
+# ------------------------------------------------------------
+# 2. MANOVA validation of cluster differences
+# ------------------------------------------------------------
+
+creative_manova <- manova(
+  cbind(
+    severity,
+    harm,
+    sentence,
+    rehab
+  ) ~ Cluster,
+  data = creative_data
+)
+
+summary(creative_manova)
+summary.aov(creative_manova)
+
+noncreative_manova <- manova(
+  cbind(
+    severity,
+    harm,
+    sentence,
+    rehab
+  ) ~ Cluster,
+  data = noncreative_data
+)
+
+summary(noncreative_manova)
+summary.aov(noncreative_manova)
+
+creative_profiles <- cluster_creativity %>%
+  filter(creativity == "Creative") %>%
+  select(PID) %>%
+  mutate(Cluster = factor(km_creative$cluster)) %>%
+  left_join(crCrime, by = "PID")
+
+noncreative_profiles <- cluster_creativity %>%
+  filter(creativity == "NonCreative") %>%
+  select(PID) %>%
+  mutate(Cluster = factor(km_noncreative$cluster)) %>%
+  left_join(crCrime, by = "PID")
+
+# Psychological profile summaries
+
+creative_profile_summary <- creative_profiles %>%
+  group_by(Cluster) %>%
+  summarise(
+    psych = mean(psych_total, na.rm = TRUE),
+    mach = mean(mach_total, na.rm = TRUE),
+    narc = mean(narc_total, na.rm = TRUE),
+    sadism = mean(sadism_total, na.rm = TRUE),
+
+    individualizing = mean(mfq_individualizing, na.rm = TRUE),
+    binding = mean(mfq_bind, na.rm = TRUE),
+
+    legal = mean(legal, na.rm = TRUE),
+    cse = mean(cse_total, na.rm = TRUE),
+    
+    .groups = "drop"
+  )
+
+creative_profile_summary
+
+noncreative_profile_summary <- noncreative_profiles %>%
+  group_by(Cluster) %>%
+  summarise(
+    psych = mean(psych_total, na.rm = TRUE),
+    mach = mean(mach_total, na.rm = TRUE),
+    narc = mean(narc_total, na.rm = TRUE),
+    sadism = mean(sadism_total, na.rm = TRUE),
+
+    individualizing = mean(mfq_individualizing, na.rm = TRUE),
+    binding = mean(mfq_bind, na.rm = TRUE),
+
+    legal = mean(legal, na.rm = TRUE),
+    cse = mean(cse_total, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+noncreative_profile_summary
+
+# Psychological MANOVAs
+
+creative_manova_psych <- manova(
+  cbind(
+    psych_total,
+    mach_total,
+    narc_total,
+    sadism_total,
+    mfq_individualizing,
+    mfq_bind,
+    legal,
+    cse_total
+  ) ~ Cluster,
+  data = creative_profiles
+)
+
+
+summary(creative_manova_psych)
+summary.aov(creative_manova_psych)
+
+# t-tests
+
+t.test(psych_total ~ Cluster, data = creative_profiles)
+
+t.test(mach_total ~ Cluster, data = creative_profiles)
+
+t.test(narc_total ~ Cluster, data = creative_profiles)
+
+t.test(sadism_total ~ Cluster, data = creative_profiles)
+
+t.test(mfq_individualizing ~ Cluster, data = creative_profiles)
+
+t.test(mfq_bind ~ Cluster, data = creative_profiles)
+
+t.test(legal ~ Cluster, data = creative_profiles)
+
+t.test(cse_total ~ Cluster, data = creative_profiles)
+
+creative_p <- c(
+  t.test(psych_total ~ Cluster, data = creative_profiles)$p.value,
+  t.test(mach_total ~ Cluster, data = creative_profiles)$p.value,
+  t.test(narc_total ~ Cluster, data = creative_profiles)$p.value,
+  t.test(sadism_total ~ Cluster, data = creative_profiles)$p.value,
+  t.test(mfq_individualizing ~ Cluster, data = creative_profiles)$p.value,
+  t.test(mfq_bind ~ Cluster, data = creative_profiles)$p.value,
+  t.test(legal ~ Cluster, data = creative_profiles)$p.value,
+  t.test(cse_total ~ Cluster, data = creative_profiles)$p.value
+)
+
+p.adjust(creative_p, method = "BH")
+
+noncreative_manova_psych <- manova(
+  cbind(
+    psych_total,
+    mach_total,
+    narc_total,
+    sadism_total,
+    mfq_individualizing,
+    mfq_bind,
+    legal,
+    cse_total
+  ) ~ Cluster,
+  data = noncreative_profiles
+)
+
+summary(noncreative_manova_psych)
+summary.aov(noncreative_manova_psych)
+
+# ============================================================
+# Non-Creative Crime Clusters: Personality and Individual Differences
+# ============================================================
+
+t.test(psych_total ~ Cluster, data = noncreative_profiles)
+
+t.test(mach_total ~ Cluster, data = noncreative_profiles)
+
+t.test(narc_total ~ Cluster, data = noncreative_profiles)
+
+t.test(sadism_total ~ Cluster, data = noncreative_profiles)
+
+t.test(mfq_individualizing ~ Cluster, data = noncreative_profiles)
+
+t.test(mfq_bind ~ Cluster, data = noncreative_profiles)
+
+t.test(legal ~ Cluster, data = noncreative_profiles)
+
+t.test(cse_total ~ Cluster, data = noncreative_profiles)
+
+noncreative_p <- c(
+  t.test(psych_total ~ Cluster, data = noncreative_profiles)$p.value,
+  t.test(mach_total ~ Cluster, data = noncreative_profiles)$p.value,
+  t.test(narc_total ~ Cluster, data = noncreative_profiles)$p.value,
+  t.test(sadism_total ~ Cluster, data = noncreative_profiles)$p.value,
+  t.test(mfq_individualizing ~ Cluster, data = noncreative_profiles)$p.value,
+  t.test(mfq_bind ~ Cluster, data = noncreative_profiles)$p.value,
+  t.test(legal ~ Cluster, data = noncreative_profiles)$p.value,
+  t.test(cse_total ~ Cluster, data = noncreative_profiles)$p.value
+)
+
+p.adjust(noncreative_p, method = "BH")
+
+# HEATMAP - CREATIVE CRIME CLUSTERS
+
+creative_heatmap <- creative_profiles %>%
+  select(
+    Cluster,
+    psych_total,
+    mach_total,
+    narc_total,
+    sadism_total,
+    mfq_individualizing,
+    mfq_bind,
+    legal,
+    cse_total
+  ) %>%
+  mutate(across(-Cluster, scale))
+
+creative_heatmap_data <- creative_heatmap %>%
+  group_by(Cluster) %>%
+  summarise(across(everything(), mean, na.rm = TRUE))
+
+creative_heatmap_long <- creative_heatmap_data %>%
+  pivot_longer(
+    cols = -Cluster,
+    names_to = "Variable",
+    values_to = "Score"
+  )
+
+ggplot(
+  creative_heatmap_long,
+  aes(
+    x = Variable,
+    y = Cluster,
+    fill = Score
+  )
+) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(
+    low = "blue",
+    mid = "white",
+    high = "red",
+    midpoint = 0
+  ) +
+  scale_x_discrete(
+    labels = c(
+      cse_total = "Creative Self-Efficacy",
+      legal = "Legal Knowledge",
+      mach_total = "Machiavellianism",
+      mfq_bind = "Binding Foundations",
+      mfq_individualizing = "Individualizing Foundations",
+      narc_total = "Narcissism",
+      psych_total = "Psychopathy",
+      sadism_total = "Sadism"
+    )
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Psychological Traits Associated with Judgment of Creative Crimes",
+    x = "",
+    y = "Cluster"
+  ) +
+  theme(
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1
+    )
+  )
+
+
+# ============================================================
+# HEATMAP - NON-CREATIVE CRIME CLUSTERS
+# ============================================================
+
+noncreative_heatmap <- noncreative_profiles %>%
+  select(
+    Cluster,
+    psych_total,
+    mach_total,
+    narc_total,
+    sadism_total,
+    mfq_individualizing,
+    mfq_bind,
+    legal,
+    cse_total
+  ) %>%
+  mutate(across(-Cluster, scale))
+
+noncreative_heatmap_data <- noncreative_heatmap %>%
+  group_by(Cluster) %>%
+  summarise(across(everything(), mean, na.rm = TRUE))
+
+noncreative_heatmap_long <- noncreative_heatmap_data %>%
+  pivot_longer(
+    cols = -Cluster,
+    names_to = "Variable",
+    values_to = "Score"
+  )
+
+ggplot(
+  noncreative_heatmap_long,
+  aes(
+    x = Variable,
+    y = Cluster,
+    fill = Score
+  )
+) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(
+    low = "blue",
+    mid = "white",
+    high = "red",
+    midpoint = 0
+  ) +
+  scale_x_discrete(
+    labels = c(
+      cse_total = "Creative Self-Efficacy",
+      legal = "Legal Knowledge",
+      mach_total = "Machiavellianism",
+      mfq_bind = "Binding Foundations",
+      mfq_individualizing = "Individualizing nFoundations",
+      narc_total = "Narcissism",
+      psych_total = "Psychopathy",
+      sadism_total = "Sadism"
+    )
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Psychological Traits Associated with Judgment of non-Creative Crimes",
+    x = "",
+    y = "Cluster"
+  ) +
+  theme(
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1
+    )
+  )
+```
+
+# Measurement Invariance for Robustness Check
+```{r}
+library(semTools)
+library(lavaan)
+
+# Data for the scales
+MI_cse <- crCrime %>%
+  filter(country_origin %in% c(1, 2)) %>%
+  select(country_origin, cse1:cse6_r)
+
+MI_cse$country_origin <- factor(MI_cse$country_origin)
+
+cse_model <- '
+CSE =~ cse1 + cse2 + cse3_r + cse4 + cse5 + cse6_r
+'
+
+measurementInvariance(
+  model = cse_model,
+  data = MI_cse,
+  group = "country_origin",
+  strict = FALSE
+)
+MI_SD4 <- crCrime %>%
+  filter(country_origin %in% c(1, 2)) %>%
+  select(country_origin, mach1:sadism7)
+MI_SD4$country_origin <- factor(MI_SD4$country_origin)
+
+SD4_model<- 'Machiavellianism =~ mach1 + mach2 + mach3 + mach4 + mach5 + mach6 + mach7
+Narcissism =~ narc1 + narc2 + narc3 +narc4 + narc5 + narc6 + narc7 
+Psychopathy =~ psy1 + psy2 + psy3 +psy4 + psy5 + psy6 + psy7 
+Sadism =~ sadism1 + sadism2 + sadism3 + sadism4 + sadism5 +sadism6 +sadism7'
+
+measurementInvariance(model = SD4_model, 
+                      data = MI_SD4, 
+                      group = "country_origin", 
+                      strict = FALSE)
+
+MI_mfq <- crCrime %>%
+  filter(country_origin %in% c(1, 2)) %>%
+  select(country_origin, MFQ_1_H:MFQ_32_P)
+MI_mfq$country_origin <- factor(MI_mfq$country_origin)
+
+mfq_model <- 'Harm =~ MFQ_1_H + MFQ_7_H + MFQ_12_H + MFQ_17_H + MFQ_23_H + MFQ_28_H
+Fairness =~ MFQ_2_F + MFQ_8_F + MFQ_13_F + MFQ_18_F + MFQ_24_F + MFQ_29_F
+Loyalty =~ MFQ_3_L + MFQ_9_L + MFQ_14_L + MFQ_19_L + MFQ_25_L + MFQ_30_L
+Authority =~ MFQ_4_A + MFQ_10_A + MFQ_15_A + MFQ_20_A + MFQ_26_A + MFQ_31_A
+Purity =~ MFQ_5_P + MFQ_11_P + MFQ_16_P + MFQ_21_P + MFQ_27_P + MFQ_32_P
+'
+
+measurementInvariance(model = mfq_model, 
+                      data = MI_mfq, 
+                      group = "country_origin", 
+                      strict = FALSE)
+
+
+fit_config <- cfa(
+  mfq_model,
+  data = MI_mfq,
+  group = "country_origin",
+  missing = "fiml",
+  estimator = "MLR"
+)
+
+summary(fit_config, fit.measures = TRUE)
+
+lavInspect(fit_config, "cor.lv")
+
+mfq_model2<- 'Individualizing =~ MFQ_1_H + MFQ_7_H + MFQ_12_H + MFQ_17_H + MFQ_23_H + MFQ_28_H + MFQ_2_F + MFQ_8_F + MFQ_13_F + MFQ_18_F + MFQ_24_F + MFQ_29_F
+Binding =~ MFQ_3_L + MFQ_9_L + MFQ_14_L + MFQ_19_L + MFQ_25_L + MFQ_30_L + MFQ_4_A + MFQ_10_A + MFQ_15_A + MFQ_20_A + MFQ_26_A + MFQ_31_A + MFQ_5_P + MFQ_11_P + MFQ_16_P + MFQ_21_P + MFQ_27_P + MFQ_32_P'
+
+measurementInvariance(model = mfq_model2, 
+                      data = MI_mfq, 
+                      group = "country_origin", 
+                      strict = FALSE)
+
+
+
+```
