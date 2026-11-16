@@ -19,6 +19,8 @@ paper:
 manifest:
   - file: codecheck/CrCrime_updated_codecheck.html
     comment: Analysis output
+  - file: codecheck/correl_crime.doc
+    comment: Table 1 in the manuscript
 
 codechecker:
   - name: Joseph Gaudard
@@ -33,6 +35,7 @@ summary: >
   - had to install libMagick and libtcl in the container to make summarytool works
   - performance 0.10.3 has unresolved dependencies, proceeding with v0.10.4
   - GPArotation needed (l 51) and not declared in the readme
+  - I could reproduce Table 1 but not the other tables
   - The code chunks are unnamed, it makes it hard to navigate.
   - I see that the analysis file is named "_updated", using OSF file versioning of the same file would show better traceability.
 repository: https://github.com/jogaudard/codecheck-2026-028
